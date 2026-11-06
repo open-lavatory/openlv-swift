@@ -29,9 +29,10 @@ The host build replaces the XCFramework with a single macOS slice; rerun `--all`
 before building an iOS app.
 
 `Native/OpenLVFFI.xcframework` is generated and ignored by Git. A fresh checkout
-needs the build step above. Remote SwiftPM distribution will require publishing
-the complete XCFramework and changing the binary target to a release URL and
-SwiftPM checksum. No prebuilt release is published by this repository yet.
+needs the build step above. The release preparation script below produces a
+complete XCFramework ZIP and a remote SwiftPM manifest. No prebuilt release is published by this repository yet;
+adding the repository by URL will not work until a release tag contains that
+manifest and its binary is hosted.
 
 The Rust dependency and generator are pinned to `openlv-ffi = 0.1.0` and
 `uniffi = 0.32.2`; `rust/Cargo.lock` pins transitive dependencies. The build script
@@ -147,7 +148,65 @@ The test script supplies Swift Testing's framework path on Command Line Tools
 installations; with full Xcode, `swift test` works directly.
 The live test otherwise uses `https://ntfy.sh/` and public STUN infrastructure.
 CI builds the macOS library and the full Apple XCFramework, runs offline tests,
-and compiles the Swift package for iOS devices and Simulator. Live tests are opt-in.
+verifies consumption from an independent release-mode Swift package, and compiles
+the Swift package for iOS devices and Simulator. It also validates release packaging
+and uploads a candidate ZIP, checksum, and manifest. The CI manifest uses an
+`example.invalid` URL for validation and is not publishable. Live tests are opt-in.
+
+Run the distribution checks locally with:
+
+```sh
+python3 -m unittest discover -s scripts/tests -v
+./scripts/test-consumer.sh
+```
+
+The packaging tests compile tiny Mach-O fixtures with the Apple command-line tools;
+they verify all required slices, archive architectures, matching headers, ZIP layout,
+repeatability, and checksum compatibility with `swift package compute-checksum`.
+They do not exercise the full Rust library on iOS.
+
+## Preparing a remote SwiftPM release
+
+On a Mac with full Xcode, build and validate the complete framework, then supply the
+immutable HTTPS URL where its ZIP will be hosted:
+
+```sh
+./scripts/build-native.sh --all
+./scripts/test.sh
+./scripts/test-consumer.sh
+python3 scripts/prepare-release.py \
+  --url https://github.com/OWNER/REPOSITORY/releases/download/0.1.0/OpenLVFFI.xcframework.zip
+```
+
+The script writes these files to `.native-build/release/` without changing the source
+`Package.swift` or publishing anything:
+
+- `OpenLVFFI.xcframework.zip`, with the framework at the ZIP root.
+- `OpenLVFFI.xcframework.zip.sha256`, containing the SwiftPM checksum.
+- `Package.swift`, retaining the package's targets and linker settings while using
+  the supplied URL and checksum for the binary target.
+
+Packaging rejects host-only or incomplete frameworks, mismatched archive
+architectures, and headers that differ across slices. ZIP entry order, timestamps,
+and permissions are normalized; unchanged inputs produce the same ZIP with the
+same Python/zlib toolchain. Compute the checksum again if you change the ZIP bytes.
+
+To publish, upload the exact ZIP at the supplied URL and put the generated manifest
+at the repository root in the release commit before tagging it. Keep the matching
+Swift sources, cancellation helper, and license in that commit. Verify the tagged
+package from a clean consumer using `.package(url: ..., exact: "0.1.0")`, including
+an iOS app that links it. Keep the local-path manifest for source development.
+The generated manifest is a release candidate, not evidence that a hosted download
+or an iOS link has succeeded.
+
+Still required before claiming full Apple release validation:
+
+- Run offline and live sessions on an iOS Simulator and a physical device, including
+  cancellation, state-stream termination, and app foreground/background transitions.
+- Confirm an app links and runs with the full framework on each supported platform;
+  the existing iOS CI steps compile the library only.
+- Publish an immutable binary and source tag, then resolve and build that remote
+  SwiftPM dependency from a clean app on macOS and iOS.
 
 ## License
 

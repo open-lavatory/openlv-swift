@@ -10,12 +10,16 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: rust
+      - name: Test release packaging
+        run: python3 -m unittest discover -s scripts/tests -v
       - run: cargo fmt --manifest-path rust/Cargo.toml --check
       - run: scripts/build-native.sh --host
       - name: Check generated bindings are current
         run: git diff --exit-code -- Sources/OpenLVNative
       - run: scripts/test.sh
       - run: swift build -c release
+      - name: Verify external SwiftPM consumer
+        run: scripts/test-consumer.sh
 
   apple-platforms:
     runs-on: macos-15
@@ -26,6 +30,8 @@ jobs:
         with:
           workspaces: rust
       - run: scripts/build-native.sh --all
+      - name: Check generated bindings are current
+        run: git diff --exit-code -- Sources/OpenLVNative
       - name: Compile for iOS Simulator
         run: >-
           xcodebuild -scheme OpenLV -destination 'generic/platform=iOS Simulator'
@@ -34,7 +40,13 @@ jobs:
         run: >-
           xcodebuild -scheme OpenLV -destination 'generic/platform=iOS'
           -derivedDataPath .build/ios-device CODE_SIGNING_ALLOWED=NO build
+      - name: Prepare release candidate (validation only; no publication)
+        run: >-
+          python3 scripts/prepare-release.py
+          --url https://example.invalid/releases/ci/OpenLVFFI.xcframework.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: OpenLVFFI-xcframework
-          path: Native/OpenLVFFI.xcframework
+          name: OpenLV-release-candidate
+          path: .native-build/release/
+          include-hidden-files: true
+          if-no-files-found: error

@@ -21,8 +21,9 @@ mkdir -p .native-build/generated
   generate --library target/release/libopenlv_swift_ffi.dylib \
   --crate openlv_ffi --language swift --config uniffi.toml \
   --out-dir ../.native-build/generated --no-format)
+python3 scripts/patch-swift-cancellation.py .native-build/generated/OpenLVNative.swift
+# Keep the checked-in bindings intact if the generator template/patch changes.
 cp .native-build/generated/OpenLVNative.swift Sources/OpenLVNative/OpenLVNative.swift
-python3 scripts/patch-swift-cancellation.py Sources/OpenLVNative/OpenLVNative.swift
 mkdir -p .native-build/Headers
 cp .native-build/generated/OpenLVFFI.h .native-build/Headers/
 cp .native-build/generated/OpenLVFFI.modulemap .native-build/Headers/module.modulemap
