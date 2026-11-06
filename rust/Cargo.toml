@@ -1,0 +1,22 @@
+[package]
+name = "openlv-swift-native"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.91"
+publish = false
+
+[lib]
+name = "openlv_swift_ffi"
+crate-type = ["cdylib", "staticlib"]
+
+[features]
+bindgen = ["uniffi/cli"]
+
+[dependencies]
+bridge = { package = "openlv-ffi", version = "=0.1.0" }
+uniffi = { version = "=0.32.2" }
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+required-features = ["bindgen"]

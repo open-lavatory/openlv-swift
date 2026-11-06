@@ -1,0 +1,40 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - run: cargo fmt --manifest-path rust/Cargo.toml --check
+      - run: scripts/build-native.sh --host
+      - name: Check generated bindings are current
+        run: git diff --exit-code -- Sources/OpenLVNative
+      - run: scripts/test.sh
+      - run: swift build -c release
+
+  apple-platforms:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - run: scripts/build-native.sh --all
+      - name: Compile for iOS Simulator
+        run: >-
+          xcodebuild -scheme OpenLV -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath .build/ios-simulator CODE_SIGNING_ALLOWED=NO build
+      - name: Compile for iOS device
+        run: >-
+          xcodebuild -scheme OpenLV -destination 'generic/platform=iOS'
+          -derivedDataPath .build/ios-device CODE_SIGNING_ALLOWED=NO build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenLVFFI-xcframework
+          path: Native/OpenLVFFI.xcframework
