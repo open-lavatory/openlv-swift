@@ -40,6 +40,16 @@ jobs:
         run: >-
           xcodebuild -scheme OpenLV -destination 'generic/platform=iOS'
           -derivedDataPath .build/ios-device CODE_SIGNING_ALLOWED=NO build
+      - name: Build iOS demo for Simulator
+        run: >-
+          xcodebuild -project Examples/iOS/OpenLVDemo.xcodeproj -scheme OpenLVDemo
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath .build/demo-simulator CODE_SIGNING_ALLOWED=NO build
+      - name: Build iOS demo for device
+        run: >-
+          xcodebuild -project Examples/iOS/OpenLVDemo.xcodeproj -scheme OpenLVDemo
+          -destination 'generic/platform=iOS'
+          -derivedDataPath .build/demo-device CODE_SIGNING_ALLOWED=NO build
       - name: Prepare release candidate (validation only; no publication)
         run: >-
           python3 scripts/prepare-release.py

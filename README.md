@@ -84,6 +84,12 @@ try await wallet.close()
 For a runnable example, start `swift run openlv-example dapp` and then
 `swift run openlv-example wallet 'openlv://…'` in another terminal.
 
+For an iPhone/iPad test app, see [the SwiftUI iOS demo](Examples/iOS/README.md).
+It includes dApp and wallet modes, an in-app peer for one-device testing, editable
+JSON requests, cancellation and timeout controls, and a live state/traffic log.
+Build `./scripts/build-native.sh --all`, then open
+`Examples/iOS/OpenLVDemo.xcodeproj` and run the `OpenLVDemo` scheme.
+
 ## State, messages, and lifecycle
 
 ```swift
@@ -149,8 +155,8 @@ installations; with full Xcode, `swift test` works directly.
 The live test otherwise uses `https://ntfy.sh/` and public STUN infrastructure.
 CI builds the macOS library and the full Apple XCFramework, runs offline tests,
 verifies consumption from an independent release-mode Swift package, and compiles
-the Swift package for iOS devices and Simulator. It also validates release packaging
-and uploads a candidate ZIP, checksum, and manifest. The CI manifest uses an
+the Swift package and links the iOS demo app for devices and Simulator. It also
+validates release packaging and uploads a candidate ZIP, checksum, and manifest. The CI manifest uses an
 `example.invalid` URL for validation and is not publishable. Live tests are opt-in.
 
 Run the distribution checks locally with:

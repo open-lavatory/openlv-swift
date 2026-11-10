@@ -6,3 +6,5 @@ rust/target/
 .native-build/
 __pycache__/
 *.pyc
+xcuserdata/
+*.xcuserstate
