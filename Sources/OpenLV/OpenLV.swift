@@ -5,9 +5,10 @@ import OpenLVNative
 public typealias RequestHandler = @Sendable (JSONValue) async throws -> JSONValue
 
 public enum OpenLV {
-    /// Create a host session. Call `connect()` to start signaling.
+    /// Create a host session with an explicit signaling protocol and server.
+    /// Call `connect()` to start signaling.
     public static func dapp(
-        options: DappOptions = DappOptions(),
+        options: DappOptions,
         onRequest: @escaping RequestHandler
     ) async throws -> OpenLVSession {
         try await guarded {
@@ -34,7 +35,6 @@ public enum OpenLV {
         } catch { throw mappedError(error) }
     }
 
-    /// Generate a random, URL-safe, 16-character session identifier in Rust.
     public static func generateSessionID() -> String {
         OpenLVNative.generateSessionId()
     }

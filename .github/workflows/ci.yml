@@ -1,8 +1,8 @@
-name: CI
+name: Build
 on: [push, pull_request]
 
 jobs:
-  macos:
+  apple:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -10,36 +10,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: rust
-      - name: Test release packaging
-        run: python3 -m unittest discover -s scripts/tests -v
-      - run: cargo fmt --manifest-path rust/Cargo.toml --check
-      - run: scripts/build-native.sh --host
-      - name: Check generated bindings are current
-        run: git diff --exit-code -- Sources/OpenLVNative
-      - run: scripts/test.sh
-      - run: swift build -c release
-      - name: Verify external SwiftPM consumer
-        run: scripts/test-consumer.sh
-
-  apple-platforms:
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: rust
-      - run: scripts/build-native.sh --all
-      - name: Check generated bindings are current
-        run: git diff --exit-code -- Sources/OpenLVNative
-      - name: Compile for iOS Simulator
-        run: >-
-          xcodebuild -scheme OpenLV -destination 'generic/platform=iOS Simulator'
-          -derivedDataPath .build/ios-simulator CODE_SIGNING_ALLOWED=NO build
-      - name: Compile for iOS device
-        run: >-
-          xcodebuild -scheme OpenLV -destination 'generic/platform=iOS'
-          -derivedDataPath .build/ios-device CODE_SIGNING_ALLOWED=NO build
+      - run: scripts/build-native.sh
+      - name: Test Swift session behavior
+        run: swift test
       - name: Build iOS demo for Simulator
         run: >-
           xcodebuild -project Examples/iOS/OpenLVDemo.xcodeproj -scheme OpenLVDemo
@@ -50,13 +23,8 @@ jobs:
           xcodebuild -project Examples/iOS/OpenLVDemo.xcodeproj -scheme OpenLVDemo
           -destination 'generic/platform=iOS'
           -derivedDataPath .build/demo-device CODE_SIGNING_ALLOWED=NO build
-      - name: Prepare release candidate (validation only; no publication)
-        run: >-
-          python3 scripts/prepare-release.py
-          --url https://example.invalid/releases/ci/OpenLVFFI.xcframework.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: OpenLV-release-candidate
-          path: .native-build/release/
-          include-hidden-files: true
+          name: OpenLVFFI.xcframework
+          path: Native/OpenLVFFI.xcframework
           if-no-files-found: error

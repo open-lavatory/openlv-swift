@@ -1,6 +1,5 @@
 import Foundation
 
-/// A JSON value that can safely cross concurrency boundaries.
 public enum JSONValue: Sendable, Equatable, Codable {
     case null
     case bool(Bool)

@@ -59,6 +59,8 @@ public actor OpenLVSession {
     /// Each call subscribes independently to future changes. Use `state()` for a
     /// snapshot. The stream ends on shutdown; slow consumers may miss updates.
     /// Consume each returned stream with one task.
+    /// UniFFI does not propagate Swift task cancellation to a pending native
+    /// wait. Call `close()` to release waiting observers before awaiting them.
     public func states() -> AsyncThrowingStream<SessionState, any Error> {
         let subscription = native.subscribeStates()
         return AsyncThrowingStream(unfolding: {

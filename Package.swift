@@ -1,6 +1,28 @@
 // swift-tools-version: 6.0
 import PackageDescription
 
+let nativeTarget: Target
+let nativeDependency: Target.Dependency
+let nativeLinkerSettings: [LinkerSetting]
+
+#if os(Linux)
+nativeTarget = .systemLibrary(
+    name: "OpenLVFFI",
+    pkgConfig: "openlv-ffi",
+    providers: []
+)
+nativeDependency = "OpenLVFFI"
+nativeLinkerSettings = []
+#else
+nativeTarget = .binaryTarget(name: "OpenLVFFI", path: "Native/OpenLVFFI.xcframework")
+nativeDependency = "OpenLVFFI"
+nativeLinkerSettings = [
+    .linkedFramework("Security"),
+    .linkedFramework("SystemConfiguration"),
+    .linkedLibrary("resolv"),
+]
+#endif
+
 let package = Package(
     name: "OpenLV",
     platforms: [.macOS(.v13), .iOS(.v16)],
@@ -9,18 +31,14 @@ let package = Package(
         .executable(name: "openlv-example", targets: ["SessionDemo"]),
     ],
     targets: [
-        .binaryTarget(name: "OpenLVFFI", path: "Native/OpenLVFFI.xcframework"),
+        nativeTarget,
         .target(
             name: "OpenLVNative",
-            dependencies: ["OpenLVFFI"],
-            linkerSettings: [
-                .linkedFramework("Security"),
-                .linkedFramework("SystemConfiguration"),
-                .linkedLibrary("resolv"),
-            ]
+            dependencies: [nativeDependency],
+            linkerSettings: nativeLinkerSettings
         ),
         .target(name: "OpenLV", dependencies: ["OpenLVNative"]),
         .executableTarget(name: "SessionDemo", dependencies: ["OpenLV"], path: "Examples/SessionDemo"),
-        .testTarget(name: "OpenLVTests", dependencies: ["OpenLV"]),
+        .testTarget(name: "OpenLVBehaviorTests", dependencies: ["OpenLV"]),
     ]
 )

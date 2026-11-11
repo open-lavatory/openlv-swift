@@ -1448,6 +1448,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "k256"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6e3919bbaa2945715f0bb6d3934a173d1e9a59ac23767fbaaef277265a7411b"
+dependencies = [
+ "cfg-if",
+ "ecdsa",
+ "elliptic-curve",
+ "sha2",
+ "signature",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1703,9 +1716,8 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
 name = "openlv"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93727734804a54b86258e82f11acc02caf9b70829d9181dcf4a328602a82e678"
+version = "0.2.0"
+source = "git+https://github.com/open-lavatory/openlv-rs?tag=v0.2.0#76b7708e300bc62d4e8acc7af18cba69985dbec5"
 dependencies = [
  "aead",
  "aes-gcm",
@@ -1713,6 +1725,7 @@ dependencies = [
  "base64 0.22.1",
  "futures",
  "hkdf",
+ "k256",
  "mqtt5",
  "rand 0.8.8",
  "regex",
@@ -1732,9 +1745,8 @@ dependencies = [
 
 [[package]]
 name = "openlv-ffi"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d43a971829daa0921612e90be1a45fe65d692331a2e4821be4769561552c5316"
+version = "0.2.0"
+source = "git+https://github.com/open-lavatory/openlv-rs?tag=v0.2.0#76b7708e300bc62d4e8acc7af18cba69985dbec5"
 dependencies = [
  "openlv",
  "parking_lot",

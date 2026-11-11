@@ -1,0 +1,5 @@
+module OpenLVFFI {
+    header "../../.build/generated/OpenLVFFI.h"
+    link "openlv_swift_ffi"
+    export *
+}

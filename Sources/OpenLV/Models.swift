@@ -14,6 +14,7 @@ public struct PeerInfo: Sendable, Equatable, Codable {
 public enum OpenLVProtocol: String, Sendable, Codable {
     case ntfy
     case mqtt
+    case nostr
 }
 
 public enum SessionStatus: String, Sendable, Codable {
@@ -53,14 +54,14 @@ public struct SessionURIInfo: Sendable, Equatable, Codable {
 public struct DappOptions: Sendable, Encodable {
     public var sessionID: String?
     public var `protocol`: OpenLVProtocol
-    public var server: String?
+    public var server: String
     public var handshakeKey: String?
     public var info: PeerInfo?
 
     public init(
         sessionID: String? = nil,
-        protocol: OpenLVProtocol = .ntfy,
-        server: String? = nil,
+        protocol: OpenLVProtocol,
+        server: String,
         handshakeKey: String? = nil,
         info: PeerInfo? = nil
     ) {
