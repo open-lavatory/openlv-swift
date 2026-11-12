@@ -23,11 +23,20 @@ struct SessionDemo {
             print("Usage: swift run openlv-example (dapp <ntfy|mqtt|nostr> <server> | wallet 'openlv://…')")
             return
         }
+        if !session.isHost {
+            print("Demo wallet account: \(try DemoResponder.account()) (personal_sign enabled)")
+        }
         do {
             let states = await session.states()
             let observer = Task {
+                var previousStatus: SessionStatus?
+                var previousSignaling: SignalState?
                 for try await state in states {
-                    print("State: \(state.status.rawValue)")
+                    if state.status != previousStatus || state.signaling != previousSignaling {
+                        print("State: \(state.status.rawValue) (signaling: \(state.signaling?.rawValue ?? "none"))")
+                        previousStatus = state.status
+                        previousSignaling = state.signaling
+                    }
                     if state.status == .disconnected {
                         try await session.close()
                         return
@@ -54,12 +63,7 @@ struct SessionDemo {
     }
 
     static func handle(_ message: JSONValue) async throws -> JSONValue {
-        if message["method"] == "eth_chainId" {
-            return ["jsonrpc": "2.0", "id": message["id"] ?? .null, "result": "0x1"]
-        }
-        return [
-            "jsonrpc": "2.0", "id": message["id"] ?? .null,
-            "error": ["code": -32601, "message": "Method not found"],
-        ]
+        print("Request: \(message["method"]?.stringValue ?? "<missing method>")")
+        return try await DemoResponder.respond(to: message)
     }
 }

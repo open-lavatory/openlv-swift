@@ -123,29 +123,3 @@ final class SessionModel: ObservableObject {
         generation == token
     }
 }
-
-enum DemoResponder {
-    static func respond(to request: JSONValue) async throws -> JSONValue {
-        let result: JSONValue
-
-        switch request["method"]?.stringValue {
-        case "eth_chainId": result = "0x1"
-        case "demo_echo": result = request["params"] ?? .null
-        case "demo_delay":
-            try await Task.sleep(for: .seconds(5))
-            result = "Delayed for five seconds"
-        default:
-            return [
-                "jsonrpc": "2.0",
-                "id": request["id"] ?? .null,
-                "error": ["code": -32601, "message": "Method not found"],
-            ]
-        }
-
-        return [
-            "jsonrpc": "2.0",
-            "id": request["id"] ?? .null,
-            "result": result,
-        ]
-    }
-}

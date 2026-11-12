@@ -30,6 +30,10 @@ let package = Package(
         .library(name: "OpenLV", targets: ["OpenLV"]),
         .executable(name: "openlv-example", targets: ["SessionDemo"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/21-DOT-DEV/swift-secp256k1.git", exact: "0.21.1"),
+        .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", exact: "1.9.0"),
+    ],
     targets: [
         nativeTarget,
         .target(
@@ -38,7 +42,15 @@ let package = Package(
             linkerSettings: nativeLinkerSettings
         ),
         .target(name: "OpenLV", dependencies: ["OpenLVNative"]),
-        .executableTarget(name: "SessionDemo", dependencies: ["OpenLV"], path: "Examples/SessionDemo"),
-        .testTarget(name: "OpenLVBehaviorTests", dependencies: ["OpenLV"]),
+        .executableTarget(
+            name: "SessionDemo",
+            dependencies: [
+                "OpenLV",
+                .product(name: "P256K", package: "swift-secp256k1"),
+                .product(name: "CryptoSwift", package: "CryptoSwift"),
+            ],
+            path: "Examples/SessionDemo"
+        ),
+        .testTarget(name: "OpenLVBehaviorTests", dependencies: ["OpenLV", "SessionDemo"]),
     ]
 )

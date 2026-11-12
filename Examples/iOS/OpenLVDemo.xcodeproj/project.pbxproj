@@ -10,6 +10,9 @@
 		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ContentView.swift */; };
 		A10000000000000000000003 /* SessionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* SessionModel.swift */; };
 		A10000000000000000000004 /* OpenLV in Frameworks */ = {isa = PBXBuildFile; productRef = A90000000000000000000002 /* OpenLV */; };
+		A10000000000000000000005 /* DemoResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* DemoResponder.swift */; };
+		A10000000000000000000006 /* P256K in Frameworks */ = {isa = PBXBuildFile; productRef = A90000000000000000000003 /* P256K */; };
+		A10000000000000000000007 /* CryptoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = A90000000000000000000005 /* CryptoSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -17,13 +20,14 @@
 		A20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* SessionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionModel.swift; sourceTree = "<group>"; };
 		A20000000000000000000004 /* OpenLVDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenLVDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000005 /* DemoResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../../SessionDemo/DemoResponder.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A30000000000000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
-			files = (A10000000000000000000004 /* OpenLV in Frameworks */,);
+			files = (A10000000000000000000004 /* OpenLV in Frameworks */, A10000000000000000000006 /* P256K in Frameworks */, A10000000000000000000007 /* CryptoSwift in Frameworks */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -36,7 +40,7 @@
 		};
 		A40000000000000000000002 /* OpenLVDemo */ = {
 			isa = PBXGroup;
-			children = (A20000000000000000000001, A20000000000000000000002, A20000000000000000000003,);
+			children = (A20000000000000000000001, A20000000000000000000002, A20000000000000000000003, A20000000000000000000005,);
 			path = OpenLVDemo;
 			sourceTree = "<group>";
 		};
@@ -56,7 +60,7 @@
 			buildRules = ();
 			dependencies = ();
 			name = OpenLVDemo;
-			packageProductDependencies = (A90000000000000000000002 /* OpenLV */,);
+			packageProductDependencies = (A90000000000000000000002 /* OpenLV */, A90000000000000000000003 /* P256K */, A90000000000000000000005 /* CryptoSwift */,);
 			productName = OpenLVDemo;
 			productReference = A20000000000000000000004 /* OpenLVDemo.app */;
 			productType = "com.apple.product-type.application";
@@ -78,7 +82,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (en, Base,);
 			mainGroup = A40000000000000000000001;
-			packageReferences = (A90000000000000000000001 /* XCLocalSwiftPackageReference "../.." */,);
+			packageReferences = (A90000000000000000000001 /* XCLocalSwiftPackageReference "../.." */, A90000000000000000000004 /* swift-secp256k1 */, A90000000000000000000006 /* CryptoSwift */,);
 			productRefGroup = A40000000000000000000003 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -94,7 +98,7 @@
 		A30000000000000000000002 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
-			files = (A10000000000000000000001, A10000000000000000000002, A10000000000000000000003,);
+			files = (A10000000000000000000001, A10000000000000000000002, A10000000000000000000003, A10000000000000000000005,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
@@ -186,8 +190,23 @@
 		A90000000000000000000001 /* XCLocalSwiftPackageReference "../.." */ = {isa = XCLocalSwiftPackageReference; relativePath = "../.."; };
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		A90000000000000000000004 /* swift-secp256k1 */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/21-DOT-DEV/swift-secp256k1.git";
+			requirement = {kind = exactVersion; version = 0.21.1; };
+		};
+		A90000000000000000000006 /* CryptoSwift */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/krzyzanowskim/CryptoSwift.git";
+			requirement = {kind = exactVersion; version = 1.9.0; };
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		A90000000000000000000002 /* OpenLV */ = {isa = XCSwiftPackageProductDependency; package = A90000000000000000000001 /* XCLocalSwiftPackageReference "../.." */; productName = OpenLV; };
+		A90000000000000000000003 /* P256K */ = {isa = XCSwiftPackageProductDependency; package = A90000000000000000000004 /* swift-secp256k1 */; productName = P256K; };
+		A90000000000000000000005 /* CryptoSwift */ = {isa = XCSwiftPackageProductDependency; package = A90000000000000000000006 /* CryptoSwift */; productName = CryptoSwift; };
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A60000000000000000000001 /* Project object */;
