@@ -52,9 +52,8 @@ struct SessionDemo {
                     "jsonrpc": "2.0", "id": 1, "method": "eth_chainId", "params": [],
                 ])
                 print("Response: \(response)")
-            } else {
-                try await observer.value
             }
+            try await observer.value
             try await session.close()
         } catch {
             try? await session.close()
