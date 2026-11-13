@@ -47,7 +47,7 @@ func mappedError(_ error: any Error) -> any Error {
     return OpenLVError(kind: .other, message: String(describing: error))
 }
 
-func guarded<T>(
+func guarded<T: Sendable>(
     isolation: isolated (any Actor)? = #isolation,
     _ operation: () async throws -> T
 ) async throws -> T {
