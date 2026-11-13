@@ -1,5 +1,6 @@
 // swift-tools-version: 6.0
 import PackageDescription
+import Foundation
 
 let nativeTarget: Target
 let nativeDependency: Target.Dependency
@@ -14,7 +15,13 @@ nativeTarget = .systemLibrary(
 nativeDependency = "OpenLVFFI"
 nativeLinkerSettings = []
 #else
+if ProcessInfo.processInfo.environment["OPENLV_USE_LOCAL_NATIVE"] == "1" {
+    nativeTarget = .binaryTarget(name: "OpenLVFFI", path: "Native/OpenLVFFI.xcframework")
+} else {
+// BEGIN RELEASE BINARY TARGET
 nativeTarget = .binaryTarget(name: "OpenLVFFI", path: "Native/OpenLVFFI.xcframework")
+// END RELEASE BINARY TARGET
+}
 nativeDependency = "OpenLVFFI"
 nativeLinkerSettings = [
     .linkedFramework("Security"),

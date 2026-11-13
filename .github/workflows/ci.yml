@@ -4,6 +4,8 @@ on: [push, pull_request]
 jobs:
   apple:
     runs-on: macos-15
+    env:
+      OPENLV_USE_LOCAL_NATIVE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
