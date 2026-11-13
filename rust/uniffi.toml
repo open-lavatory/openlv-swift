@@ -1,0 +1,4 @@
+[crates.openlv_ffi.bindings.swift]
+module_name = "OpenLVNative"
+ffi_module_name = "OpenLVFFI"
+generate_module_map = true

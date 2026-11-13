@@ -1,0 +1,89 @@
+name: Publish release
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == github.event.repository.default_branch &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'release/v')
+    runs-on: macos-15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_BRANCH: ${{ github.event.pull_request.head.ref }}
+      RELEASE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+      OPENLV_USE_LOCAL_NATIVE: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+      - name: Validate merged release manifest
+        shell: bash
+        run: |
+          version="${RELEASE_BRANCH#release/v}"
+          [[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || exit 1
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          mkdir -p .native-build/release
+          swift package dump-package > .native-build/release/package.json
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import re
+
+          package = json.loads(Path('.native-build/release/package.json').read_text())
+          target = next(t for t in package['targets'] if t['name'] == 'OpenLVFFI')
+          prefix = f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/releases/download/"
+          url = target.get('url', '')
+          if not url.startswith(prefix):
+              raise SystemExit('Release must use a native archive hosted in this repository')
+          match = re.fullmatch(r'(native-v[0-9]+\.[0-9]+\.[0-9]+)/OpenLVFFI\.xcframework\.zip', url[len(prefix):])
+          checksum = target.get('checksum', '')
+          if not match or not re.fullmatch(r'[a-f0-9]{64}', checksum):
+              raise SystemExit('Invalid release binary URL or checksum')
+          expected_tag = 'native-v' + os.environ['RELEASE_BRANCH'].removeprefix('release/v')
+          if match[1] != expected_tag:
+              raise SystemExit('Native archive version must match the package version')
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write(f'NATIVE_TAG={match[1]}\nEXPECTED_CHECKSUM={checksum}\n')
+          PY
+          if git show-ref --verify --quiet "refs/tags/v$version"; then
+            [[ "$(git rev-list -n 1 "v$version")" == "$RELEASE_SHA" ]] || {
+              echo "Package tag already points to a different commit" >&2
+              exit 1
+            }
+          fi
+      - name: Verify matching native source and archive checksum
+        shell: bash
+        run: |
+          git diff --exit-code "$NATIVE_TAG" HEAD -- rust Sources/OpenLVNative Sources/OpenLVFFI scripts/build-native.sh scripts/check-bindings.sh
+          gh release download "$NATIVE_TAG" --pattern OpenLVFFI.xcframework.zip --dir .native-build/release
+          actual=$(swift package compute-checksum .native-build/release/OpenLVFFI.xcframework.zip)
+          [[ "$actual" == "$EXPECTED_CHECKSUM" ]] || {
+            echo "Native archive checksum does not match the merged manifest" >&2
+            exit 1
+          }
+      - name: Test merged package using remote binary
+        run: swift test --force-resolved-versions
+      - name: Publish package tag and release
+        shell: bash
+        run: |
+          if ! git show-ref --verify --quiet "refs/tags/v$VERSION"; then
+            git tag "v$VERSION" "$RELEASE_SHA"
+            git push origin "refs/tags/v$VERSION"
+          fi
+          if ! gh release view "v$VERSION" >/dev/null 2>&1; then
+            gh release create "v$VERSION" --verify-tag --title "OpenLV v$VERSION" --generate-notes
+          fi

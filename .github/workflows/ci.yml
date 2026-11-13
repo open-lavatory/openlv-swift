@@ -1,0 +1,35 @@
+name: Build
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  apple:
+    runs-on: macos-15
+    env:
+      OPENLV_USE_LOCAL_NATIVE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - run: scripts/build-native.sh
+      - name: Test Swift session behavior
+        run: swift test
+      - name: Build iOS demo for Simulator
+        run: >-
+          xcodebuild -project Examples/iOS/OpenLVDemo.xcodeproj -scheme OpenLVDemo
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath .build/demo-simulator CODE_SIGNING_ALLOWED=NO build
+      - name: Build iOS demo for device
+        run: >-
+          xcodebuild -project Examples/iOS/OpenLVDemo.xcodeproj -scheme OpenLVDemo
+          -destination 'generic/platform=iOS'
+          -derivedDataPath .build/demo-device CODE_SIGNING_ALLOWED=NO build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenLVFFI.xcframework
+          path: Native/OpenLVFFI.xcframework
+          if-no-files-found: error

@@ -1,0 +1,10 @@
+.DS_Store
+.build/
+.swiftpm/
+Native/*.xcframework/
+rust/target/
+.native-build/
+__pycache__/
+*.pyc
+xcuserdata/
+*.xcuserstate

@@ -1,0 +1,102 @@
+name: Prepare release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version (eg 0.1.0)"
+        required: true
+        type: string
+
+concurrency:
+  group: prepare-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: macos-15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ inputs.version }}
+      OPENLV_USE_LOCAL_NATIVE: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate release inputs
+        shell: bash
+        run: |
+          [[ "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || {
+            echo "Version must be a stable major.minor.patch" >&2
+            exit 1
+          }
+          if git show-ref --verify --quiet "refs/tags/v$VERSION"; then
+            echo "Package version v$VERSION already exists" >&2
+            exit 1
+          fi
+          echo "NATIVE_TAG=native-v$VERSION" >> "$GITHUB_ENV"
+          mkdir -p .native-build/release
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - name: Build native framework
+        run: scripts/build-native.sh
+      - name: Publish immutable native archive
+        shell: bash
+        run: |
+          ditto -c -k --keepParent Native/OpenLVFFI.xcframework .native-build/release/OpenLVFFI.xcframework.zip
+          if gh release view "$NATIVE_TAG" >/dev/null 2>&1; then
+            git diff --exit-code "$NATIVE_TAG" HEAD -- rust Sources/OpenLVNative Sources/OpenLVFFI scripts/build-native.sh scripts/check-bindings.sh
+          else
+            gh release create "$NATIVE_TAG" .native-build/release/OpenLVFFI.xcframework.zip \
+              --target "$GITHUB_SHA" --title "Native framework $NATIVE_TAG" --latest=false \
+              --notes "Prebuilt native component for OpenLV. Add the Swift package using its v-prefixed package version."
+          fi
+      - name: Pin downloaded release archive
+        shell: bash
+        run: |
+          rm -f .native-build/release/OpenLVFFI.xcframework.zip
+          gh release download "$NATIVE_TAG" --pattern OpenLVFFI.xcframework.zip --dir .native-build/release
+          checksum=$(swift package compute-checksum .native-build/release/OpenLVFFI.xcframework.zip)
+          url="https://github.com/$GITHUB_REPOSITORY/releases/download/$NATIVE_TAG/OpenLVFFI.xcframework.zip"
+          python3 scripts/update-binary-target.py "$url" "$checksum"
+      - name: Test package using remote binary
+        run: swift test --force-resolved-versions
+      - name: Build iOS demo using remote binary
+        run: |
+          xcodebuild -project Examples/iOS/OpenLVDemo.xcodeproj -scheme OpenLVDemo \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath .build/release-simulator CODE_SIGNING_ALLOWED=NO build
+          xcodebuild -project Examples/iOS/OpenLVDemo.xcodeproj -scheme OpenLVDemo \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath .build/release-device CODE_SIGNING_ALLOWED=NO build
+      - name: Open release PR
+        shell: bash
+        env:
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          branch="release/v$VERSION"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            git fetch origin "$branch"
+            git diff --exit-code FETCH_HEAD
+          else
+            git switch -c "$branch"
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add Package.swift
+            git commit -m "Pin native framework for v$VERSION"
+            git push origin "$branch"
+          fi
+          cat > .native-build/release/pr-body.md <<EOF
+          Prepare OpenLV v$VERSION using the immutable $NATIVE_TAG archive.
+          EOF
+          if ! gh pr view "$branch" --json url --jq .url; then
+            gh pr create --base "$BASE_BRANCH" --head "$branch" \
+              --title "Release v$VERSION" --body-file .native-build/release/pr-body.md
+          fi
